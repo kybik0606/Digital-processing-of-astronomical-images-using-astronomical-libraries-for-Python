@@ -1,6 +1,6 @@
-astro/
-.astro/
-
+astro_env/
+.astro_env/
+__pycache__
 zwo-585-mc-photometry/
 zwo-585-mc-reduction/
 My-astro-project/data/
