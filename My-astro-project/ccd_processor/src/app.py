@@ -50,7 +50,7 @@ class CCDProcessorApp:
         style.configure("Accent.TButton", font=('Arial', 10, 'bold'))
         
         self.root.title("CCD Processor")
-        self.root.geometry("1400x800")
+        self.root.geometry("1800x900")
         
         # Привязка клавиш для навигации
         self.root.bind('<Left>', lambda e: self.previous_image())

@@ -24,9 +24,9 @@ class CommandPanel:
         """Создание текстового поля для команд"""
         self.command_text = ReadonlyText(
             self.frame, 
-            width=40, 
+            width=50, 
             height=30,
-            font=('Consolas', 10),
+            font=('Consolas', 9),
             bg='black',
             fg='white'
         )
