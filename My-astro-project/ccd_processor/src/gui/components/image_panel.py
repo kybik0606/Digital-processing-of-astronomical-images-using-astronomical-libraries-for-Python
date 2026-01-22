@@ -92,7 +92,7 @@ class ImagePanel:
     def _create_type_selector(self):
         """Создание селектора типа изображений"""
         type_frame = ttk.Frame(self.nav_frame)
-        type_frame.pack(side=tk.RIGHT, padx=10)
+        type_frame.pack(side=tk.RIGHT, padx=5)
         
         ttk.Label(type_frame, text="Тип:").pack(side=tk.LEFT)
         self.image_type_var = tk.StringVar(value="lights")
@@ -110,7 +110,7 @@ class ImagePanel:
         ttk.Button(controls_frame, text="Инвертировать", 
                   command=self.app.invert_image).pack(side=tk.LEFT, padx=2)
         ttk.Button(controls_frame, text="Сетка", 
-                  command=self.app.toggle_grid).pack(side=tk.LEFT, padx=2)
+                  command=self.app.toggle_grid).pack(side=tk.LEFT, padx=5)
         
         # Добавляем цветовую карту (БЕЗ ПРИВЯЗКИ К МЕТОДУ)
         self._create_colormap_selector(controls_frame)

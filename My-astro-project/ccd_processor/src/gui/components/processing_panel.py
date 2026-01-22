@@ -31,4 +31,4 @@ class ProcessingPanel:
         
         # Кнопка калибровки
         ttk.Button(master_frame, text="Калибровать Lights", 
-                  command=self.app.calibrate_lights).pack(side=tk.LEFT, padx=20)
+                  command=self.app.calibrate_lights).pack(side=tk.LEFT, padx=5)

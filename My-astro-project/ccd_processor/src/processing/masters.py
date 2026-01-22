@@ -5,6 +5,7 @@
 import ccdproc
 import numpy as np
 from astropy.nddata import CCDData
+from astropy.stats import mad_std
 
 class MastersProcessor:
     def __init__(self, app):
@@ -16,13 +17,16 @@ class MastersProcessor:
             raise ValueError("Нет bias кадров для обработки")
             
         bias_list = [self.app.read_fits_with_unit(f) for f in bias_files]
-        
-        master_bias = ccdproc.combine(
-            bias_list,
-            method='median',
-            sigma_clip=True,
-            sigma_clip_low_thresh=3,
-            sigma_clip_high_thresh=3
+
+        master_bias = ccdproc.combine(bias_list,
+            method='average',
+            sigma_clip=True, 
+            sigma_clip_low_thresh=5, 
+            sigma_clip_high_thresh=5,
+            sigma_clip_func=np.ma.median, 
+            sigma_clip_dev_func=mad_std,
+            mem_limit=360e6,
+            unit='adu'
         )
         
         return master_bias
@@ -38,12 +42,15 @@ class MastersProcessor:
         if master_bias:
             dark_list = [ccdproc.subtract_bias(dark, master_bias) for dark in dark_list]
             
-        master_dark = ccdproc.combine(
-            dark_list,
-            method='median',
-            sigma_clip=True,
-            sigma_clip_low_thresh=3,
-            sigma_clip_high_thresh=3
+        master_dark = ccdproc.combine(dark_list,
+            method='average',
+            sigma_clip=True, 
+            sigma_clip_low_thresh=5, 
+            sigma_clip_high_thresh=5,
+            sigma_clip_func=np.ma.median, 
+            sigma_clip_dev_func=mad_std,
+            mem_limit=360e6,
+            unit='adu'
         )
         
         return master_dark
