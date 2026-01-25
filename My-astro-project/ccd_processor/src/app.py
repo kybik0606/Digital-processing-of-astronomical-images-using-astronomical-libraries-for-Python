@@ -51,6 +51,9 @@ class CCDProcessorApp:
         
         self.root.title("CCD Processor")
         self.root.geometry("1800x900")
+
+        # Минимальный размер окна
+        self.root.minsize(1200, 800)
         
         # Привязка клавиш для навигации
         self.root.bind('<Left>', lambda e: self.previous_image())
@@ -168,13 +171,9 @@ class CCDProcessorApp:
             self.update_navigation_info()
             self.log_command(f"Отображение {len(current_list)} {self.current_image_type} кадров")
         else:
-            self.main_window.image_panel.ax.clear()
-            self.main_window.image_panel.ax.text(
-                0.5, 0.5, f"Нет {self.current_image_type} изображений", 
-                ha='center', va='center', transform=self.main_window.image_panel.ax.transAxes
-            )
-            self.main_window.image_panel.ax.set_title(f"{self.current_image_type.capitalize()} - нет изображений")
-            self.main_window.image_panel.canvas.draw()
+            # Вызываем метод из ImagePanel
+            self.main_window.image_panel.show_empty_message(self.current_image_type)
+            
             self.main_window.image_panel.nav_info.config(text="Нет изображений")
             self.main_window.stats_panel.current_file_label.config(text="Нет")
             self.main_window.stats_panel.image_size_label.config(text="-")

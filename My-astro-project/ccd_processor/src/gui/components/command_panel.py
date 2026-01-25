@@ -28,7 +28,7 @@ class CommandPanel:
             height=30,
             font=('Consolas', 9),
             bg='black',
-            fg='white'
+            fg='lightgreen'
         )
         self.command_text.pack(fill=tk.BOTH, expand=True)
         

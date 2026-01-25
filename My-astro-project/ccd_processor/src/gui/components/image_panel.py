@@ -172,3 +172,33 @@ class ImagePanel:
             self.ax.set_ylabel('')
         
         self.canvas.draw()
+    
+    def show_empty_message(self, image_type="изображений"):
+        """Показать сообщение об отсутствии изображений"""
+        self.ax.clear()
+        
+        # Настраиваем темную тему
+        self.ax.set_facecolor('#2b2b2b')
+        
+        # Убираем оси
+        self.ax.set_xticks([])
+        self.ax.set_yticks([])
+        
+        # Настраиваем цвета
+        self.ax.tick_params(colors='white')
+        for spine in self.ax.spines.values():
+            spine.set_color('white')
+        
+        # Заголовок
+        self.ax.set_title(f"{image_type.capitalize()} - нет изображений", 
+                        color='white', fontsize=12)
+        
+        # Текст
+        self.ax.text(0.5, 0.5, f"Нет {image_type} изображений", 
+                    ha='center', va='center', 
+                    transform=self.ax.transAxes,
+                    color='white',
+                    fontsize=14)
+        
+        # Обновляем холст
+        self.canvas.draw()

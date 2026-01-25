@@ -36,8 +36,8 @@ class TopMenu:
     def _create_directory_selector(self):
         """Создание селектора директории"""
         ttk.Button(self.menu_frame, text="Рабочая директория", 
-                  command=self.app.set_working_directory).pack(side=tk.LEFT, padx=10)
+                  command=self.app.set_working_directory).pack(side=tk.LEFT, padx=5)
         
         self.dir_label = ttk.Label(self.menu_frame, 
                                   text=f"Директория: {os.path.basename(self.app.working_directory)}")
-        self.dir_label.pack(side=tk.LEFT, padx=10)
+        self.dir_label.pack(side=tk.LEFT, padx=0)
