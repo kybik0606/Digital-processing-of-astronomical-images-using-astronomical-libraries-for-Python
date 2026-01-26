@@ -103,28 +103,23 @@ class ImagePanel:
         type_combo.bind('<<ComboboxSelected>>', self.app.on_image_type_changed)
         
     def _create_image_controls(self):
-        """Создание элементов управления изображением"""
         controls_frame = ttk.Frame(self.frame)
         controls_frame.pack(fill=tk.X, padx=5, pady=5)
         
-        ttk.Button(controls_frame, text="Инвертировать", 
-                  command=self.app.invert_image).pack(side=tk.LEFT, padx=2)
-        ttk.Button(controls_frame, text="Сетка", 
-                  command=self.app.toggle_grid).pack(side=tk.LEFT, padx=5)
+        # Одна кнопка, которая работает по удержанию
+        btn = ttk.Button(controls_frame, text="Показать инвертировано")
+        btn.pack(side=tk.LEFT, padx=2)
         
-        # Добавляем цветовую карту (БЕЗ ПРИВЯЗКИ К МЕТОДУ)
-        self._create_colormap_selector(controls_frame)
-        
-    def _create_colormap_selector(self, parent_frame):
-        """Создание выбора цветовой карты (без привязки)"""
-        cmap_frame = ttk.Frame(parent_frame)
-        cmap_frame.pack(side=tk.RIGHT, padx=10)
+        # Вешаем события
+        btn.bind("<ButtonPress-1>", lambda e: self.app.show_inverted(True))
+        btn.bind("<ButtonRelease-1>", lambda e: self.app.show_inverted(False))
         
     def get_colormap(self):
-        """Получить выбранную цветовую карту"""
-        return self.cmap_var.get()
+        """Получить цветовую карту (фиксированная - gray)"""
+        # Всегда возвращаем 'gray' для консистентной оценки калибровки
+        return "gray"
         
-    def update_display(self, image_data=None, title=None):
+    def update_display(self, image_data=None, title=None, colormap="gray"):
         """Обновление отображения изображения"""
         self.ax.clear()
         
@@ -142,8 +137,8 @@ class ImagePanel:
             self.ax.set_yticks([])
             display_title = "Загрузите изображение"
         else:
-            # Отображаем изображение
-            im = self.ax.imshow(image_data, cmap=self.get_colormap(), 
+            # Отображаем изображение с указанной цветовой картой
+            im = self.ax.imshow(image_data, cmap=colormap, 
                                aspect='auto', origin='lower')
             
             # Добавляем цветовую шкалу

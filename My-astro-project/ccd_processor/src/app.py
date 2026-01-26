@@ -142,7 +142,7 @@ class CCDProcessorApp:
             return
             
         self.current_image_index = (self.current_image_index - 1) % len(current_list)
-        self.display_image(current_list[self.current_image_index])
+        self.display_image(current_list[self.current_image_index], colormap="gray")
         self.update_navigation_info()
     
     def next_image(self):
@@ -152,7 +152,7 @@ class CCDProcessorApp:
             return
             
         self.current_image_index = (self.current_image_index + 1) % len(current_list)
-        self.display_image(current_list[self.current_image_index])
+        self.display_image(current_list[self.current_image_index], colormap="gray")
         self.update_navigation_info()
     
     def on_image_type_changed(self, event):
@@ -167,7 +167,7 @@ class CCDProcessorApp:
         
         if current_list and len(current_list) > 0:
             self.current_image_index = 0
-            self.display_image(current_list[0])
+            self.display_image(current_list[0], colormap="gray")
             self.update_navigation_info()
             self.log_command(f"Отображение {len(current_list)} {self.current_image_type} кадров")
         else:
@@ -180,7 +180,7 @@ class CCDProcessorApp:
             self.log_command(f"Нет {self.current_image_type} кадров для отображения")
     
     # Методы отображения
-    def display_image(self, file_path):
+    def display_image(self, file_path, colormap="gray"):
         """Отображение изображения"""
         try:
             self.current_image = self.read_fits_with_unit(file_path)
@@ -190,7 +190,16 @@ class CCDProcessorApp:
             vmin = np.percentile(data, 1)
             vmax = np.percentile(data, 99)
             
-            self.main_window.image_panel.ax.imshow(data, cmap='gray', vmin=vmin, vmax=vmax, origin='lower', aspect="equal")
+            # Используем переданную цветовую карту
+            self.main_window.image_panel.ax.imshow(
+                data, 
+                cmap=colormap, 
+                vmin=vmin, 
+                vmax=vmax, 
+                origin='lower', 
+                aspect="equal"
+            )
+            
             self.main_window.image_panel.ax.set_title(f"{os.path.basename(file_path)}")
             self.main_window.image_panel.canvas.draw()
             
@@ -415,55 +424,16 @@ class CCDProcessorApp:
     def log_command(self, message):
         """Логирование команды"""
         self.main_window.command_panel.log_command(message)
-    
-    def invert_image(self):
-        """Инвертирование изображения - переключение цветовой карты"""
+
+    def show_inverted(self, show):
+        """Показать или скрыть инвертированную версию"""
         try:
-            if self.current_image is None:
-                self.log_command("Ошибка: Нет изображения для инвертирования")
-                messagebox.showwarning("Внимание", "Сначала загрузите изображение")
-                return
-            
-            # Получаем текущее отображаемое изображение
             ax = self.main_window.image_panel.ax
-            
-            if not ax.images:
-                self.log_command("Ошибка: Нет изображения на графике")
-                return
-            
-            image_display = ax.images[0]
-            
-            # Проверяем текущее состояние
-            current_cmap = image_display.get_cmap().name
-            
-            # Переключаем между normal и reversed colormap
-            if current_cmap in ['gray', 'viridis', 'plasma', 'inferno', 'magma', 'cividis']:
-                # Переключаем на инвертированную версию
-                new_cmap = current_cmap + '_r'
-                self.log_command(f"Изображение инвертировано ({current_cmap} -> {new_cmap})")
-            elif current_cmap.endswith('_r'):
-                # Возвращаем к обычной версии
-                new_cmap = current_cmap[:-2]
-                self.log_command(f"Изображение восстановлено ({current_cmap} -> {new_cmap})")
-            else:
-                # Для неизвестных карт используем gray/gray_r
-                new_cmap = 'gray_r' if current_cmap != 'gray_r' else 'gray'
-                self.log_command(f"Изображение переключено на {new_cmap}")
-            
-            # Применяем новую цветовую карту
-            image_display.set_cmap(new_cmap)
-            
-            # Перерисовываем
-            self.main_window.image_panel.canvas.draw()
-            
-        except Exception as e:
-            self.log_command(f"Ошибка инвертирования: {str(e)}")
-            messagebox.showerror("Ошибка", f"Не удалось инвертировать изображение: {str(e)}")
-    
-    def toggle_grid(self):
-        """Переключение сетки (заглушка)"""
-        self.log_command("Переключение сетки - функция в разработке")
-        messagebox.showinfo("Сетка", "Функция координатной сетки в разработке")
+            if ax.images:  # Если есть изображение
+                ax.images[0].set_cmap("gray_r" if show else "gray")
+                self.main_window.image_panel.canvas.draw()
+        except:
+            pass  # Просто игнорируем ошибки
     
     def auto_flats(self):
         """Авто flats (заглушка)"""
