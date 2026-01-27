@@ -123,37 +123,125 @@ class StatsPanel:
         self.image_size_label.pack(side=tk.LEFT)
         
     def _show_master_frames_dialog(self):
-        """Показать диалог выбора мастер-кадра"""
+        """Показать диалог выбора мастер-кадра с темной темой"""
         # Создаем диалоговое окно
         dialog = tk.Toplevel(self.parent)
-        dialog.title("Просмотр мастер-кадра")
-        dialog.geometry("300x150")
+        dialog.title("🔍 Просмотр мастер-кадра")
+        dialog.geometry("320x200")
         dialog.resizable(False, False)
         dialog.transient(self.parent)
         dialog.grab_set()
         
-        # Центрируем диалог
-        dialog.update_idletasks()
-        x = self.parent.winfo_x() + (self.parent.winfo_width() // 2) - (300 // 2)
-        y = self.parent.winfo_y() + (self.parent.winfo_height() // 2) - (150 // 2)
-        dialog.geometry(f"+{x}+{y}")
+        # Темная тема
+        dialog.configure(bg='#2b2b2b')
         
-        ttk.Label(dialog, text="Выберите мастер-кадр для просмотра:", 
-                 font=('Arial', 10)).pack(pady=15)
+        # Центрирование
+        dialog.update_idletasks()
+        parent_x = self.parent.winfo_x()
+        parent_y = self.parent.winfo_y()
+        parent_width = self.parent.winfo_width()
+        parent_height = self.parent.winfo_height()
+        dialog_width = 320
+        dialog_height = 200
+        
+        x = parent_x + (parent_width - dialog_width) // 2
+        y = parent_y + (parent_height - dialog_height) // 2
+        dialog.geometry(f"{dialog_width}x{dialog_height}+{x}+{y}")
+        
+        # Основной контейнер
+        main_frame = ttk.Frame(dialog)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        
+        # Заголовок с иконкой
+        header_frame = ttk.Frame(main_frame)
+        header_frame.pack(fill=tk.X, pady=(0, 15))
+        
+        # Иконка (эмодзи или текст)
+        icon_label = ttk.Label(header_frame, 
+                              text="🔍",
+                              font=('Arial', 14),
+                              background='#2b2b2b',
+                              foreground='white')
+        icon_label.pack(side=tk.LEFT, padx=(0, 10))
+        
+        title_label = ttk.Label(header_frame,
+                               text="Выберите мастер-кадр для просмотра",
+                               font=('Arial', 11, 'bold'),
+                               background='#2b2b2b',
+                               foreground='white',
+                               wraplength=250)
+        title_label.pack(side=tk.LEFT)
+        
+        # Combobox с пояснением
+        combo_frame = ttk.Frame(main_frame)
+        combo_frame.pack(fill=tk.X, pady=10)
+        
+        ttk.Label(combo_frame,
+                 text="Тип кадра:",
+                 font=('Arial', 9),
+                 background='#2b2b2b',
+                 foreground='#cccccc').pack(anchor=tk.W)
         
         master_var = tk.StringVar(value="Bias")
-        master_combo = ttk.Combobox(dialog, textvariable=master_var,
-                                   values=["Bias", "Dark", "Flat"], 
-                                   state="readonly", width=10)
-        master_combo.pack(pady=10)
+        master_combo = ttk.Combobox(combo_frame,
+                                   textvariable=master_var,
+                                   values=["Bias", "Dark", "Flat"],
+                                   state="readonly",
+                                   width=15,
+                                   font=('Arial', 10))
+        master_combo.pack(fill=tk.X, pady=(5, 0))
         
-        button_frame = ttk.Frame(dialog)
-        button_frame.pack(pady=10)
+        # Tooltip для combobox
+        tooltip_text = {
+            "Bias": "Кадры нулевой экспозиции (шум сенсора)",
+            "Dark": "Темновые кадры (термический шум)",
+            "Flat": "Калибровочные кадры (равномерная засветка)"
+        }
         
-        ttk.Button(button_frame, text="Просмотр", 
-                  command=lambda: self._view_master_frame(master_var.get(), dialog)).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Отмена", 
-                  command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        def show_tooltip(event):
+            master_type = master_var.get()
+            if master_type in tooltip_text:
+                # Можно добавить всплывающую подсказку
+                pass
+        
+        master_combo.bind('<<ComboboxSelected>>', show_tooltip)
+        
+        # Кнопки
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=(20, 0))
+        
+        # Кнопка Отмена (слева)
+        cancel_btn = ttk.Button(button_frame,
+                               text="Отмена",
+                               command=dialog.destroy,
+                               width=12)
+        cancel_btn.pack(side=tk.LEFT)
+        
+        # Пробел между кнопками
+        ttk.Frame(button_frame, width=20).pack(side=tk.LEFT)
+        
+        # Кнопка Просмотр (справа, акцентная)
+        view_btn = ttk.Button(button_frame,
+                             text="Ок",
+                             command=lambda: self._view_master_frame(master_var.get(), dialog),
+                             width=12,
+                             style="Accent.TButton")
+        view_btn.pack(side=tk.RIGHT)
+        
+        # Горячие клавиши
+        dialog.bind('<Return>', lambda e: self._view_master_frame(master_var.get(), dialog))
+        dialog.bind('<Escape>', lambda e: dialog.destroy())
+        
+        # Фокус и выделение
+        master_combo.focus_set()
+        master_combo.selection_range(0, tk.END)
+        
+        # Закрытие при клике вне окна (опционально)
+        def close_on_click_out(event):
+            if event.widget == dialog:
+                dialog.destroy()
+        
+        dialog.bind('<Button-1>', close_on_click_out)
         
     def _view_master_frame(self, master_type, dialog):
         """Просмотр выбранного мастер-кадра"""

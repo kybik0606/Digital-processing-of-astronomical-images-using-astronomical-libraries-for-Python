@@ -312,6 +312,14 @@ class CCDProcessorApp:
             return
         
         try:
+            # Логируем старт
+            self.log_command("🚀 ЗАПУСК КАЛИБРОВКИ LIGHT КАДРОВ")
+            self.log_command(f"📊 Light кадров: {len(self.lights)}")
+            self.log_command(f"🎯 Master Bias: {'✅ есть' if self.master_bias else '❌ нет'}")
+            self.log_command(f"🎯 Master Dark: {'✅ есть' if self.master_dark else '❌ нет'}")
+            self.log_command(f"🎯 Master Flat: {'✅ есть' if self.master_flat else '❌ нет'}")
+            
+            # Выполняем калибровку
             calibrated_lights = self.calibration_processor.calibrate_lights(
                 self.lights, self.master_bias, self.master_dark, self.master_flat
             )
@@ -320,19 +328,51 @@ class CCDProcessorApp:
             calibrated_dir = os.path.join(self.config.working_directory, "calibrated")
             os.makedirs(calibrated_dir, exist_ok=True)
             
-            for i, calibrated in enumerate(calibrated_lights):
-                output_filename = f"calibrated_{os.path.basename(self.lights[i])}"
-                output_path = os.path.join(calibrated_dir, output_filename)
-                calibrated.write(output_path, overwrite=True)
-                self.log_command(f"  - Сохранен как: {output_path}")
+            self.log_command(f"\n💾 Сохранение калиброванных файлов...")
+            self.log_command(f"📁 Папка: {calibrated_dir}")
             
-            self.log_command("Калибровка всех light кадров завершена!")
-            messagebox.showinfo("Готово", f"Калибровка light кадров завершена! Файлы сохранены в {calibrated_dir}")
+            saved_count = 0
+            for i, calibrated in enumerate(calibrated_lights):
+                # Формируем имя файла
+                original_name = os.path.basename(self.lights[i])
+                output_filename = f"calibrated_{original_name}"
+                output_path = os.path.join(calibrated_dir, output_filename)
+                
+                try:
+                    # Сохраняем БЕЗ изменений (как есть после калибровки)
+                    calibrated.write(output_path, overwrite=True)
+                    self.log_command(f"  ✅ Сохранен: {output_filename}")
+                    saved_count += 1
+                    
+                except Exception as e:
+                    self.log_command(f"  ❌ Ошибка сохранения {output_filename}: {str(e)}")
+            
+            # Итог
+            if saved_count > 0:
+                self.log_command(f"✅ КАЛИБРОВКА УСПЕШНА!")
+                self.log_command(f"📊 Сохранено файлов: {saved_count}/{len(self.lights)}")
+                self.log_command(f"📁 Папка с результатами: {calibrated_dir}")
+                
+                messagebox.showinfo(
+                    "Готово",
+                    f"Калибровка завершена успешно!\n\n"
+                    f"Сохранено: {saved_count} файлов\n"
+                    f"Папка: {calibrated_dir}\n\n"
+                )
+            else:
+                self.log_command(f"❌ КАЛИБРОВКА НЕ УДАЛАСЬ")
+                self.log_command(f"📊 Не сохранено ни одного файла")
+                
+                messagebox.showerror(
+                    "Ошибка",
+                    "Не удалось сохранить ни одного калиброванного файла.\n"
+                    "Проверьте права доступа к папке."
+                )
             
         except Exception as e:
-            self.log_command(f"Ошибка калибровки: {str(e)}")
-            messagebox.showerror("Ошибка", f"Ошибка при калибровке: {str(e)}")
-    
+            self.log_command(f"\n❌ ОШИБКА КАЛИБРОВКИ: {str(e)}")
+            messagebox.showerror("Ошибка", f"Ошибка при калибровке:\n{str(e)}")
+        
     def display_master_frame(self, ccd_data, title):
         """Отображение мастер-кадра"""
         self.main_window.image_panel.ax.clear()
