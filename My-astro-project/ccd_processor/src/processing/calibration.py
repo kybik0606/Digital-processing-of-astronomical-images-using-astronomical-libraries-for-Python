@@ -6,6 +6,8 @@ import ccdproc
 import astropy.units as u
 import numpy as np
 import os
+from astropy.io import fits
+from astropy.nddata import CCDData
 
 class CalibrationProcessor:
     def __init__(self, app):
@@ -78,10 +80,40 @@ class CalibrationProcessor:
                 # 5. Убираем отрицательные значения (после вычитаний могут появиться)
                 calibrated.data = np.clip(calibrated.data, 0, None)
                 
-                # 6. НЕ нормализуем! Оставляем как есть после калибровки
-                self._log_data_stats("Финальный (без нормализации)", calibrated.data)
+                # 6. Создаем чистый CCDData без маски и неопределенности
+                # Извлекаем только данные и заголовок, игнорируя mask и uncertainty
+                clean_data = calibrated.data
                 
-                calibrated_lights.append(calibrated)
+                # Создаем новый CCDData только с данными и заголовком
+                clean_ccd = CCDData(
+                    data=clean_data,
+                    unit=calibrated.unit,
+                    header=calibrated.header.copy()  # Копируем заголовок
+                )
+                
+                # Добавляем ASCII-совместимые комментарии в заголовок (без кириллицы!)
+                clean_ccd.header['HISTORY'] = 'Calibration: bias, dark, flat correction'
+                if master_bias is not None:
+                    clean_ccd.header['HISTORY'] = f'Master Bias: {len(self.app.bias)} frames'
+                if master_dark is not None:
+                    clean_ccd.header['HISTORY'] = f'Master Dark: {len(self.app.darks)} frames'
+                if master_flat is not None:
+                    clean_ccd.header['HISTORY'] = f'Master Flat: {len(self.app.flats)} frames'
+                
+                # Добавляем информацию о калибровке в ASCII-формате
+                clean_ccd.header['CALSTAT'] = ('BDF', 'Calibration status: B=Bias, D=Dark, F=Flat')
+                cal_status = ""
+                if master_bias is not None:
+                    cal_status += "B"
+                if master_dark is not None:
+                    cal_status += "D"
+                if master_flat is not None:
+                    cal_status += "F"
+                clean_ccd.header['CALSTAT'] = (cal_status, 'Calibration applied')
+                
+                self._log_data_stats("Финальный (без нормализации)", clean_ccd.data)
+                
+                calibrated_lights.append(clean_ccd)
                 self.app.log_command(f"  ✓ Успешно калиброван")
                 
             except Exception as e:

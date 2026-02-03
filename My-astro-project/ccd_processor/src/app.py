@@ -339,8 +339,9 @@ class CCDProcessorApp:
                 output_path = os.path.join(calibrated_dir, output_filename)
                 
                 try:
-                    # Сохраняем БЕЗ изменений (как есть после калибровки)
-                    calibrated.write(output_path, overwrite=True)
+                    # КОНВЕРТИРУЕМ ИЗ float64 В uint16
+                    self._save_as_uint16(calibrated, output_path)
+                    
                     self.log_command(f"  ✅ Сохранен: {output_filename}")
                     saved_count += 1
                     
@@ -357,7 +358,9 @@ class CCDProcessorApp:
                     "Готово",
                     f"Калибровка завершена успешно!\n\n"
                     f"Сохранено: {saved_count} файлов\n"
-                    f"Папка: {calibrated_dir}\n\n"
+                    f"Папка: {calibrated_dir}\n"
+                    f"Формат: uint16 (16-бит)\n"
+                    f"Совместимость: Siril, DSS, PixInsight"
                 )
             else:
                 self.log_command(f"❌ КАЛИБРОВКА НЕ УДАЛАСЬ")
@@ -372,6 +375,52 @@ class CCDProcessorApp:
         except Exception as e:
             self.log_command(f"\n❌ ОШИБКА КАЛИБРОВКИ: {str(e)}")
             messagebox.showerror("Ошибка", f"Ошибка при калибровке:\n{str(e)}")
+
+    def _save_as_uint16(self, ccd_data, output_path):
+        """Сохранить CCDData как uint16 FITS файл"""
+        from astropy.io import fits
+        import numpy as np
+        
+        # 1. Получаем данные (float64)
+        data_float = ccd_data.data
+        
+        # 2. Нормализуем к диапазону 0-65535
+        data_min = np.min(data_float)
+        data_max = np.max(data_float)
+        
+        if data_max > data_min:  # Избегаем деления на ноль
+            # Линейное масштабирование к 0-65535
+            data_scaled = (data_float - data_min) / (data_max - data_min) * 65535.0
+        else:
+            data_scaled = np.zeros_like(data_float)
+        
+        # 3. Конвертируем в uint16
+        data_uint16 = data_scaled.astype(np.uint16)
+        
+        # 4. Создаем новый заголовок с правильным BITPIX и BZERO
+        new_header = ccd_data.header.copy()
+        
+        # Обновляем ключевые поля
+        new_header['BITPIX'] = 16
+        new_header['BZERO'] = 32768  # Важно! Для преобразования int16 → uint16
+        if 'BUNIT' in new_header:
+            new_header['BUNIT'] = 'adu'
+        if 'CALSTAT' in new_header:
+            new_header['CALSTAT'] = 'BD'  # Обрезаем до 2 символов
+        
+        # Убираем не-FITS поля ccdproc
+        for key in list(new_header.keys()):
+            if key.startswith('HIERARCH') or key in ['SUBBIAS', 'SUBDARK']:
+                del new_header[key]
+        
+        # Добавляем информацию о конвертации
+        new_header['HISTORY'] = f'Converted from float64 to uint16'
+        new_header['HISTORY'] = f'Original range: min={data_min:.2f}, max={data_max:.2f}'
+        new_header['HISTORY'] = f'Scaled to: min=0, max=65535'
+        
+        # 5. Создаем и сохраняем HDU
+        hdu = fits.PrimaryHDU(data=data_uint16, header=new_header)
+        hdu.writeto(output_path, overwrite=True, output_verify='fix')
         
     def display_master_frame(self, ccd_data, title):
         """Отображение мастер-кадра"""
