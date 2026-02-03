@@ -313,11 +313,11 @@ class CCDProcessorApp:
         
         try:
             # Логируем старт
-            self.log_command("🚀 ЗАПУСК КАЛИБРОВКИ LIGHT КАДРОВ")
-            self.log_command(f"📊 Light кадров: {len(self.lights)}")
-            self.log_command(f"🎯 Master Bias: {'✅ есть' if self.master_bias else '❌ нет'}")
-            self.log_command(f"🎯 Master Dark: {'✅ есть' if self.master_dark else '❌ нет'}")
-            self.log_command(f"🎯 Master Flat: {'✅ есть' if self.master_flat else '❌ нет'}")
+            self.log_command("ЗАПУСК КАЛИБРОВКИ LIGHT КАДРОВ")
+            self.log_command(f"Light кадров: {len(self.lights)}")
+            self.log_command(f"Master Bias: {'✅ есть' if self.master_bias else '❌ нет'}")
+            self.log_command(f"Master Dark: {'✅ есть' if self.master_dark else '❌ нет'}")
+            self.log_command(f"Master Flat: {'✅ есть' if self.master_flat else '❌ нет'}")
             
             # Выполняем калибровку
             calibrated_lights = self.calibration_processor.calibrate_lights(
