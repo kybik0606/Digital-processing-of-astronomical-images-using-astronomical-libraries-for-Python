@@ -21,7 +21,36 @@ except ImportError:
 class CalibrationProcessor:
     def __init__(self, app):
         self.app = app  # Сохраняем ссылку на приложение
-        
+    
+    def _get_exposure_time(self, ccd_data):
+        """Извлечение времени экспозиции из CCDData"""
+        try:
+            # Используем метод из приложения
+            return self.app.get_exposure_time(ccd_data)
+        except Exception as e:
+            # Если метод не доступен, используем свою реализацию
+            try:
+                header = ccd_data.header
+                exposure_keys = ['EXPTIME', 'EXPOSURE', 'EXP TIME', 'EXPTIME1', 'exposure']
+                
+                for key in exposure_keys:
+                    if key in header:
+                        exposure_time = header[key]
+                        if isinstance(exposure_time, str):
+                            import re
+                            match = re.search(r'(\d+\.?\d*)', exposure_time)
+                            if match:
+                                exposure_time = float(match.group(1))
+                            else:
+                                continue
+                        return exposure_time * u.second
+                
+                # Если ключей нет, возвращаем 1 секунду по умолчанию
+                return 1.0 * u.second
+                
+            except Exception:
+                return 1.0 * u.second
+    
     def calibrate_lights(self, lights, master_bias, master_dark, master_flat):
         """Калибровка light кадров (только вычитание мастер-кадров)"""
         calibrated_lights = []
@@ -52,13 +81,34 @@ class CalibrationProcessor:
                 
                 # 3. Вычитаем dark (если есть) - ВАЖНО: с масштабированием по экспозиции
                 if master_dark is not None:
-                    calibrated = ccdproc.subtract_dark(
-                        calibrated, 
-                        master_dark,
-                        exposure_time='exposure',  # Ищет ключ 'exposure' в header
-                        exposure_unit=u.second,
-                        scale=True  # МАСШТАБИРУЕМ по времени экспозиции!
-                    )
+                    # Получаем время экспозиции для light и dark
+                    light_exposure = self._get_exposure_time(light)
+                    dark_exposure = self._get_exposure_time(master_dark)
+                    
+                    self.app.log_command(f"  - Время экспозиции light: {light_exposure}")
+                    self.app.log_command(f"  - Время экспозиции dark: {dark_exposure}")
+                    
+                    # Масштабируем dark по времени экспозиции
+                    if light_exposure.value > 0 and dark_exposure.value > 0:
+                        # Вычисляем коэффициент масштабирования
+                        scale_factor = light_exposure.value / dark_exposure.value
+                        
+                        if scale_factor != 1.0:
+                            self.app.log_command(f"  - Масштабируем dark в {scale_factor:.2f} раз")
+                            # Масштабируем master_dark
+                            scaled_dark_data = master_dark.data * scale_factor
+                            scaled_dark = CCDData(scaled_dark_data, unit=master_dark.unit, header=master_dark.header)
+                            
+                            # Вычитаем масштабированный dark
+                            calibrated.data = calibrated.data - scaled_dark.data
+                        else:
+                            # Если времена равны, просто вычитаем
+                            calibrated.data = calibrated.data - master_dark.data
+                    else:
+                        # Если не удалось определить время, просто вычитаем без масштабирования
+                        self.app.log_command(f"  - Предупреждение: не удалось определить время экспозиции, вычитаем без масштабирования")
+                        calibrated.data = calibrated.data - master_dark.data
+                    
                     self.app.log_command(f"  - Вычтен Master Dark")
                 else:
                     self.app.log_command(f"  - Master Dark: нет")
@@ -69,13 +119,15 @@ class CalibrationProcessor:
                     if np.any(master_flat.data <= 0):
                         # Корректируем чтобы избежать деления на ноль
                         flat_data = master_flat.data.copy()
-                        flat_data[flat_data <= 0] = np.median(flat_data) * 0.01
+                        flat_median = np.median(flat_data)
+                        flat_data[flat_data <= 0] = flat_median * 0.01
                         master_flat_corrected = ccdproc.CCDData(
                             flat_data, 
                             unit=master_flat.unit,
                             header=master_flat.header
                         )
                         calibrated = ccdproc.flat_correct(calibrated, master_flat_corrected)
+                        self.app.log_command(f"  - Предупреждение: Flat содержит нули, исправлено")
                     else:
                         calibrated = ccdproc.flat_correct(calibrated, master_flat)
                     

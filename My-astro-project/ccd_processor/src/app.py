@@ -104,6 +104,54 @@ class CCDProcessorApp:
             self.log_command(f"Добавлено {len(files)} flat кадров")
             self.update_stats()
     
+    # НОВЫЕ МЕТОДЫ ДЛЯ ЗАГРУЗКИ ГОТОВЫХ МАСТЕР-КАДРОВ
+    def load_master_bias(self):
+        """Загрузка готового мастер bias"""
+        file = self.select_master_file("Выберите Master Bias файл")
+        if file:
+            try:
+                self.master_bias = self.read_fits_with_unit(file)
+                self.log_command(f"Загружен Master Bias: {os.path.basename(file)}")
+                self.update_master_frames_status()
+                messagebox.showinfo("Успех", "Master Bias успешно загружен")
+            except Exception as e:
+                self.log_command(f"Ошибка загрузки Master Bias: {str(e)}")
+                messagebox.showerror("Ошибка", f"Не удалось загрузить Master Bias: {str(e)}")
+    
+    def load_master_dark(self):
+        """Загрузка готового мастер dark"""
+        file = self.select_master_file("Выберите Master Dark файл")
+        if file:
+            try:
+                self.master_dark = self.read_fits_with_unit(file)
+                self.log_command(f"Загружен Master Dark: {os.path.basename(file)}")
+                self.update_master_frames_status()
+                messagebox.showinfo("Успех", "Master Dark успешно загружен")
+            except Exception as e:
+                self.log_command(f"Ошибка загрузки Master Dark: {str(e)}")
+                messagebox.showerror("Ошибка", f"Не удалось загрузить Master Dark: {str(e)}")
+    
+    def load_master_flat(self):
+        """Загрузка готового мастер flat"""
+        file = self.select_master_file("Выберите Master Flat файл")
+        if file:
+            try:
+                self.master_flat = self.read_fits_with_unit(file)
+                self.log_command(f"Загружен Master Flat: {os.path.basename(file)}")
+                self.update_master_frames_status()
+                messagebox.showinfo("Успех", "Master Flat успешно загружен")
+            except Exception as e:
+                self.log_command(f"Ошибка загрузки Master Flat: {str(e)}")
+                messagebox.showerror("Ошибка", f"Не удалось загрузить Master Flat: {str(e)}")
+    
+    def select_master_file(self, title):
+        """Выбор мастер-файла (только один файл)"""
+        file = filedialog.askopenfilename(
+            title=title,
+            filetypes=[("FITS files", "*.fits *.fit *.fts"), ("All files", "*.*")]
+        )
+        return file if file else None
+    
     def select_files(self, title):
         """Выбор файлов"""
         files = filedialog.askopenfilenames(

@@ -20,9 +20,8 @@ class StatsPanel:
         # Устанавливаем фиксированную ширину и запрещаем изменение размера
         self.stats_frame.pack(side=tk.LEFT, fill=tk.Y, padx=5, pady=5)
         self.stats_frame.pack_propagate(False)  # Запрещаем изменение размера
-        self.stats_frame.config(width=200)  # Фиксированная ширина 250 пикселей
+        self.stats_frame.config(width=200)  # Увеличил ширину для кнопок
         
-        # Остальной код без изменений...
         self.counters_frame = ttk.Frame(self.stats_frame)
         self.counters_frame.pack(fill=tk.X, padx=5, pady=5)
         
@@ -64,38 +63,76 @@ class StatsPanel:
         ttk.Separator(self.stats_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, padx=5, pady=10)
         
     def _create_master_frames_section(self):
-        """Создание секции для мастер-кадров"""
+        """Создание секции для мастер-кадров с кнопками добавления"""
         master_frame = ttk.Frame(self.stats_frame)
         master_frame.pack(fill=tk.X, padx=5, pady=5)
         
+        # Заголовок
         ttk.Label(master_frame, text="Мастер-кадры:", 
                  font=('Arial', 10, 'bold')).pack(anchor=tk.W)
         
-        # Master Bias
+        # Master Bias с кнопкой
         bias_frame = ttk.Frame(master_frame)
         bias_frame.pack(fill=tk.X, pady=2)
-        ttk.Label(bias_frame, text="Bias:", font=('Arial', 9, 'bold'), width=8).pack(side=tk.LEFT)
-        self.master_bias_label = ttk.Label(bias_frame, text="❌ Нет", font=('Arial', 9), foreground='red')
-        self.master_bias_label.pack(side=tk.LEFT)
         
-        # Master Dark
+        # Левая часть: метка и статус
+        bias_left = ttk.Frame(bias_frame)
+        bias_left.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ttk.Label(bias_left, text="Bias:", font=('Arial', 9, 'bold'), width=8).pack(side=tk.LEFT)
+        self.master_bias_label = ttk.Label(bias_left, text="❌ Нет", font=('Arial', 9), foreground='red')
+        self.master_bias_label.pack(side=tk.LEFT, padx=(0, 5))
+        
+        # Правая часть: кнопка добавления
+        add_bias_btn = ttk.Button(bias_frame, text="+", 
+                                 width=3,
+                                 command=self.app.load_master_bias,
+                                 style="Small.TButton")
+        add_bias_btn.pack(side=tk.RIGHT)
+        
+        # Master Dark с кнопкой
         dark_frame = ttk.Frame(master_frame)
         dark_frame.pack(fill=tk.X, pady=2)
-        ttk.Label(dark_frame, text="Dark:", font=('Arial', 9, 'bold'), width=8).pack(side=tk.LEFT)
-        self.master_dark_label = ttk.Label(dark_frame, text="❌ Нет", font=('Arial', 9), foreground='red')
-        self.master_dark_label.pack(side=tk.LEFT)
         
-        # Master Flat
+        # Левая часть: метка и статус
+        dark_left = ttk.Frame(dark_frame)
+        dark_left.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ttk.Label(dark_left, text="Dark:", font=('Arial', 9, 'bold'), width=8).pack(side=tk.LEFT)
+        self.master_dark_label = ttk.Label(dark_left, text="❌ Нет", font=('Arial', 9), foreground='red')
+        self.master_dark_label.pack(side=tk.LEFT, padx=(0, 5))
+        
+        # Правая часть: кнопка добавления
+        add_dark_btn = ttk.Button(dark_frame, text="+", 
+                                 width=3,
+                                 command=self.app.load_master_dark,
+                                 style="Small.TButton")
+        add_dark_btn.pack(side=tk.RIGHT)
+        
+        # Master Flat с кнопкой
         flat_frame = ttk.Frame(master_frame)
         flat_frame.pack(fill=tk.X, pady=2)
-        ttk.Label(flat_frame, text="Flat:", font=('Arial', 9, 'bold'), width=8).pack(side=tk.LEFT)
-        self.master_flat_label = ttk.Label(flat_frame, text="❌ Нет", font=('Arial', 9), foreground='red')
-        self.master_flat_label.pack(side=tk.LEFT)
         
-        # Кнопка просмотра
+        # Левая часть: метка и статус
+        flat_left = ttk.Frame(flat_frame)
+        flat_left.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ttk.Label(flat_left, text="Flat:", font=('Arial', 9, 'bold'), width=8).pack(side=tk.LEFT)
+        self.master_flat_label = ttk.Label(flat_left, text="❌ Нет", font=('Arial', 9), foreground='red')
+        self.master_flat_label.pack(side=tk.LEFT, padx=(0, 5))
+        
+        # Правая часть: кнопка добавления
+        add_flat_btn = ttk.Button(flat_frame, text="+", 
+                                 width=3,
+                                 command=self.app.load_master_flat,
+                                 style="Small.TButton")
+        add_flat_btn.pack(side=tk.RIGHT)
+        
+        # Кнопка просмотра мастер-кадров
         view_button = ttk.Button(master_frame, text="Просмотр мастер-кадров", 
                                command=self._show_master_frames_dialog)
-        view_button.pack(fill=tk.X, pady=5)
+        view_button.pack(fill=tk.X, pady=(10, 5))
+        
+        # Стиль для маленьких кнопок
+        style = ttk.Style()
+        style.configure("Small.TButton", font=('Arial', 8), padding=2)
         
         # Разделитель
         ttk.Separator(self.stats_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, padx=5, pady=10)
